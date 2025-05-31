@@ -3,7 +3,7 @@
 #include "ThingSpeak.h"
 
 #define uS_TO_S_FACTOR 1000000ULL                                     //Conversion factor for micro seconds to seconds
-#define TIME_TO_SLEEP  1200                                           //Time ESP32 will go to sleep (in seconds) - 9.5 minutes / 590 seconds в секундах (1200 - 20 минут)
+#define TIME_TO_SLEEP  1200                                          //Time ESP32 will go to sleep (in seconds) - 9.5 minutes / 590 seconds в секундах (1200 - 20 минут)
 
 Adafruit_BME680 bme;                                               
 
@@ -14,6 +14,7 @@ char pass[] = "170300asd";                                             //WiFi Pa
 unsigned long myChannelNumber = 1736315;                               //Thingspeak channel number
 const char * myWriteAPIKey = "0SJ1P721NYA24UFF";                       //Thingspeak API write key
 
+int gas = 0;
 int temp = 0;
 int humid = 0;
 int pressure = 0;
@@ -30,9 +31,11 @@ void setup()
     Serial.println("Could not find a valid BME280 sensor");
   }
 
+bme.setGasHeater(320, 150);
+
+  readGas();
   recTempHumid ();                                                   //запуск фунций чтения данных с BME 
-  recPress ();
-  delay(200);                                                        //Wait for sensor LED to turn off
+  recPress ();                                                        
 
   Serial.print("Temp: ");
   Serial.println(temp);
@@ -40,6 +43,8 @@ void setup()
   Serial.println(humid);
   Serial.print("Pressure: ");
   Serial.println(pressure);
+  Serial.print("gas: ");
+  Serial.println(gas);
 
   WiFi.begin(ssid, pass);                                            //подключение к WiFi
   int timeout = 0;
@@ -82,9 +87,14 @@ void recPress ()                                                     //чтен�
   pressure = (bme.readPressure()/100)*0.75;
 }
 
+void readGas ()                                                     //чтение газа
+{
+  gas = bme.readGas()/1000;
+}
+
 void updateThingSpeak ()                                             //Отправка поста на Thingspeak
 {
-
+  ThingSpeak.setField(1, gas);
   ThingSpeak.setField(2, temp);
   ThingSpeak.setField(3, humid);
   ThingSpeak.setField(4, pressure);
